@@ -9,13 +9,13 @@ import java.util.UUID;
 
 @Data
 @Document
-
 public class Queue {
 
     @Id
     private UUID id;
-    private String source;
-    private String dest;
+    private UUID source;
+    private String token;
+
     private Status status;
     private String payload;
 }

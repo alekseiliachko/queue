@@ -2,11 +2,12 @@ package com.example.queue.controller;
 
 import com.example.queue.config.SecretKeysConfig;
 import com.example.queue.exceptions.BadSecretKeyException;
+import com.example.queue.exceptions.BadTokenException;
 import com.example.queue.model.Remote;
 import com.example.queue.model.dto.InitializeRemoteRequest;
+import com.example.queue.model.enums.Role;
 import com.example.queue.security.JwtUtils;
 import com.example.queue.service.RemoteService;
-import com.example.queue.service.SecurityUserDetails;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -32,13 +33,10 @@ public class AuthController {
     RemoteService remoteService;
 
     @Autowired
-    PasswordEncoder encoder;
-
-    @Autowired
-    JwtUtils jwtUtils;
-
-    @Autowired
     AuthenticationManager authenticationManager;
+
+    @Autowired
+    PasswordEncoder encoder;
 
     @ApiOperation(value = "Authenticate remote ")
     @ApiResponses(value = {
@@ -59,21 +57,24 @@ public class AuthController {
             throw new BadSecretKeyException();
         }
 
-        Remote remote = new Remote();
-        remote.setName(initializeRemoteRequest.getRemoteName());
-        remote.setPass(initializeRemoteRequest.getRemotePass());
-
-        Remote saved = remoteService.save(remote);
-        System.out.println(saved);
+        Remote saved = remoteService.save(init(initializeRemoteRequest.getRemoteName(), initializeRemoteRequest.getRemotePass()));
 
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(initializeRemoteRequest.getRemoteName(), initializeRemoteRequest.getRemotePass()));
+                    new UsernamePasswordAuthenticationToken(initializeRemoteRequest.getRemoteName(), initializeRemoteRequest.getRemotePass()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
+        String jwt = JwtUtils.generateJwtToken(authentication);
 
         log.info("Given access to: " + saved.getName());
 
         return ResponseEntity.ok(jwt);
+    }
+
+    private Remote init(String name, String pass) {
+        Remote remote = new Remote();
+        remote.setName(name);
+        remote.setPass(encoder.encode(pass));
+        remote.setRole(Role.REMOTE);
+        return remote;
     }
 }
