@@ -1,7 +1,6 @@
 package com.example.queue.controlleradvice;
 
-import com.example.queue.exceptions.BadTokenException;
-import com.example.queue.exceptions.BadSecretKeyException;
+import com.example.queue.exceptions.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,5 +28,29 @@ public class ControllerAdviceImpl extends ResponseEntityExceptionHandler {
         String bodyOfResponse = ex.getMessage();
         return handleExceptionInternal(ex, bodyOfResponse,
                 new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+    }
+
+    @ExceptionHandler(value = { HostInaccessibleException.class })
+    protected ResponseEntity<Object> handleConflict(HostInaccessibleException ex, WebRequest request) {
+        log.error(ex.getMessage());
+        String bodyOfResponse = ex.getMessage();
+        return handleExceptionInternal(ex, bodyOfResponse,
+                new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(value = { NonSubbedTopicException.class })
+    protected ResponseEntity<Object> handleConflict(NonSubbedTopicException ex, WebRequest request) {
+        log.error(ex.getMessage());
+        String bodyOfResponse = ex.getMessage();
+        return handleExceptionInternal(ex, bodyOfResponse,
+                new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(value = { TopicException.class })
+    protected ResponseEntity<Object> handleConflict(TopicException ex, WebRequest request) {
+        log.error(ex.getMessage());
+        String bodyOfResponse = ex.getMessage();
+        return handleExceptionInternal(ex, bodyOfResponse,
+                new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
     }
 }

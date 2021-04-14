@@ -30,7 +30,10 @@ public class JwtUtils {
 				.compact();
 	}
 
-	public String getUserNameFromJwtToken(String token) {
+	public static String getUserNameFromJwtToken(String token) {
+		if (token == null || !validateJwtToken(token)) {
+			return null;
+		}
 		return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody().getSubject();
 	}
 

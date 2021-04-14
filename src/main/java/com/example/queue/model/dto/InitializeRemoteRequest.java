@@ -13,6 +13,9 @@ public class InitializeRemoteRequest {
     @JsonProperty(required = true)
     private String remoteName;
 
+    @JsonProperty(required = false)
+    private String port;
+
     @JsonProperty(required = true)
     private String remotePass;
 

@@ -3,6 +3,7 @@ package com.example.queue.controller;
 import com.example.queue.config.SecretKeysConfig;
 import com.example.queue.exceptions.BadSecretKeyException;
 import com.example.queue.exceptions.BadTokenException;
+import com.example.queue.exceptions.HostInaccessibleException;
 import com.example.queue.model.Remote;
 import com.example.queue.model.dto.InitializeRemoteRequest;
 import com.example.queue.model.enums.Role;
@@ -14,6 +15,7 @@ import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,9 +26,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.URL;
 
 @Slf4j
-@Controller
+@RestController
 public class AuthController {
 
     @Autowired
@@ -56,6 +63,22 @@ public class AuthController {
         if (!SecretKeysConfig.getKEYS().contains(key)) {
             throw new BadSecretKeyException();
         }
+
+        try {
+
+            // FOR TEST ONLY
+            URL url = new URL(initializeRemoteRequest.getRemoteName());
+            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+            connection.setRequestMethod("HEAD");
+            connection.connect();
+
+//            IN PROD
+//            InetAddress inetAddress = InetAddress.getByName(initializeRemoteRequest.getRemoteName());
+
+        } catch (Exception e) {
+            throw new HostInaccessibleException(initializeRemoteRequest.getRemoteName());
+        }
+
 
         Remote saved = remoteService.save(init(initializeRemoteRequest.getRemoteName(), initializeRemoteRequest.getRemotePass()));
 
