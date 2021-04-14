@@ -26,7 +26,7 @@ public class QueueManager {
         List<Queue> queues = queueService.findRelevant();
 
         if (queues.isEmpty()) {
-            log.info("query is empty; nothing to send");
+//            log.info("query is empty; nothing to send");
             return;
         }
         for (Queue queue: queues) {

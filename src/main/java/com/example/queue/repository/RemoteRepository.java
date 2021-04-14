@@ -13,4 +13,6 @@ public interface RemoteRepository extends MongoRepository<Remote, UUID> {
     Optional<Remote> findByName(String name);
 
     List<Remote> findBySubsContaining(String topic);
+
+    Boolean existsByName(String name);
 }

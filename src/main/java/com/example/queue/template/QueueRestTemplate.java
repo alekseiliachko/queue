@@ -36,7 +36,6 @@ public class QueueRestTemplate {
         // send message if failed save it as query
 
         List<Remote> remotes = remoteService.getSubbedToTopic(topic);
-        remotes.add(remoteService.findByName("http://localhost:8080"));
         if (remotes.isEmpty()) {
             throw new NonSubbedTopicException(topic);
         }
@@ -44,13 +43,14 @@ public class QueueRestTemplate {
         for (Remote remote : remotes) {
             Queue queue = messageDto.toQueue(remote.getName());
             try {
-                String url = remote.getName() + "/" + PathConfig.MESSAGE_RECEIVER + "/";
-                HttpStatus httpStatus = restTemplate.postForObject(url, messageDto, HttpStatus.class);
-                if (!HttpStatus.OK.equals(httpStatus)) {
+                String url = remote.getName() + PathConfig.MESSAGE_RECEIVER;
+                ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, messageDto, String.class);
+                if (!HttpStatus.OK.equals(responseEntity.getStatusCode())) {
                     throw new IllegalArgumentException();
                 }
                 queue.setStatus(Status.HANDLED);
                 queue.setHandled(new Date());
+                log.info("send message to: " + remote.getName());
             } catch (Exception e) {
                 log.error("failed to send message to recipient: " + "<" + remote.getName() + ">" + " saved to retry later.");
             }
@@ -60,18 +60,20 @@ public class QueueRestTemplate {
 
     public void tryResolveQueue(Queue queue) {
         try {
-             String url = queue.getDestination() + "/" + PathConfig.MESSAGE_RECEIVER + "/";
-             HttpStatus httpStatus = restTemplate.postForObject(url, queue.toMessage(), HttpStatus.class);
-             if (!HttpStatus.OK.equals(httpStatus)) {
+             String url = queue.getDestination() + PathConfig.MESSAGE_RECEIVER;
+             ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, queue.toMessage(), String.class);
+             if (!HttpStatus.OK.equals(responseEntity.getStatusCode())) {
                  throw new IllegalArgumentException();
              }
              queue.setStatus(Status.HANDLED);
              queue.setHandled(new Date());
              queueService.save(queue);
+             log.info("send message to: " + queue.getDestination());
         } catch (Exception e) {
+            e.printStackTrace();
             queue.setRetriesLeft(queue.getRetriesLeft() - 1);
             if (queue.getRetriesLeft() == 0) {
-                log.error("failed to send message to recipient: " + "<" + queue.getDestination() + ">" + " storaged.");
+                log.error("failed to send message to recipient: " + "<" + queue.getDestination() + ">" + " stored.");
                 queueService.storage(queue);
             } else {
                 log.error("failed to send message to recipient: " + "<" + queue.getDestination() + ">" + " saved to retry later.");

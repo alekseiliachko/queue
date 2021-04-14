@@ -28,9 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URL;
+import java.net.*;
 
 @Slf4j
 @RestController
@@ -64,33 +62,34 @@ public class AuthController {
             throw new BadSecretKeyException();
         }
 
-        try {
+        String name = initializeRemoteRequest.getRemoteName();
+        String pass = initializeRemoteRequest.getRemotePass();
 
-            // FOR TEST ONLY
-            URL url = new URL(initializeRemoteRequest.getRemoteName());
+        log.info("going to register: " + name);
+        URL url;
+
+        try {
+            url = new URL(initializeRemoteRequest.getRemoteName());
+
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
             connection.setRequestMethod("HEAD");
             connection.connect();
 
-//            IN PROD
 //            InetAddress inetAddress = InetAddress.getByName(initializeRemoteRequest.getRemoteName());
 
         } catch (Exception e) {
             throw new HostInaccessibleException(initializeRemoteRequest.getRemoteName());
         }
 
+        if (!remoteService.existsByName(name)) {
+            remoteService.save(init(name, pass));
+        }
 
-        Remote saved = remoteService.save(init(initializeRemoteRequest.getRemoteName(), initializeRemoteRequest.getRemotePass()));
+        String token = authenticate(name, pass);
 
-        Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(initializeRemoteRequest.getRemoteName(), initializeRemoteRequest.getRemotePass()));
+        log.info("given access to: " + name);
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = JwtUtils.generateJwtToken(authentication);
-
-        log.info("Given access to: " + saved.getName());
-
-        return ResponseEntity.ok(jwt);
+        return ResponseEntity.ok(token);
     }
 
     private Remote init(String name, String pass) {
@@ -99,5 +98,15 @@ public class AuthController {
         remote.setPass(encoder.encode(pass));
         remote.setRole(Role.REMOTE);
         return remote;
+    }
+
+    private String authenticate(String name, String password) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(name, password));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = JwtUtils.generateJwtToken(authentication);
+
+        return jwt;
     }
 }

@@ -30,6 +30,10 @@ public class RemoteService implements UserDetailsService {
         return remoteRepository.findByName(name).orElseThrow(EntityNotFoundException::new);
     }
 
+    public Boolean existsByName(String name) {
+        return remoteRepository.existsByName(name);
+    }
+
     public List<Remote> getSubbedToTopic(String topic) {
         return remoteRepository.findBySubsContaining(topic);
     }
